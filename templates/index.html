@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing URL Detector - Real-time Security Scanner</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            color: var(--white);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .search-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            margin-bottom: 2rem;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .search-btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--white);
+            background: var(--primary);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .search-btn:active {
+            transform: scale(0.98);
+        }
+
+        .search-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .search-hint {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .result-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: none;
+        }
+
+        .result-card.visible {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .result-icon.safe {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .result-icon.suspicious {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .result-icon.phishing {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .result-title {
+            flex: 1;
+        }
+
+        .result-classification {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .result-classification.safe { color: var(--success); }
+        .result-classification.suspicious { color: var(--warning); }
+        .result-classification.phishing { color: var(--danger); }
+
+        .result-url {
+            color: #6b7280;
+            font-size: 0.875rem;
+            word-break: break-all;
+        }
+
+        .confidence-bar {
+            margin-bottom: 1.5rem;
+        }
+
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .confidence-track {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .confidence-fill.safe { background: var(--success); }
+        .confidence-fill.suspicious { background: var(--warning); }
+        .confidence-fill.phishing { background: var(--danger); }
+
+        .summary-text {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .factors-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .factors-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .factors-title.risk {
+            color: var(--danger);
+        }
+
+        .factors-title.safe {
+            color: var(--success);
+        }
+
+        .factor-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .factor-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .factor-icon.high { background: #fee2e2; color: var(--danger); }
+        .factor-icon.medium { background: #fef3c7; color: var(--warning); }
+        .factor-icon.low { background: #e0e7ff; color: #6366f1; }
+        .factor-icon.safe { background: #d1fae5; color: var(--success); }
+
+        .factor-content {
+            flex: 1;
+        }
+
+        .factor-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .factor-desc {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .probability-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .probability-card {
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .probability-card.legit {
+            background: #d1fae5;
+        }
+
+        .probability-card.phish {
+            background: #fee2e2;
+        }
+
+        .probability-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .probability-card.legit .probability-value { color: var(--success); }
+        .probability-card.phish .probability-value { color: var(--danger); }
+
+        .probability-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading.visible {
+            display: block;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: var(--danger);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        footer a {
+            color: #94a3b8;
+        }
+
+        .recent-checks {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .recent-title {
+            color: var(--white);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .recent-list {
+            list-style: none;
+        }
+
+        .recent-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            color: var(--white);
+            font-size: 0.875rem;
+        }
+
+        .recent-url {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 1rem;
+        }
+
+        .recent-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .recent-badge.safe { background: var(--success); }
+        .recent-badge.suspicious { background: var(--warning); color: var(--dark); }
+        .recent-badge.phishing { background: var(--danger); }
+
+        @media (max-width: 640px) {
+            .search-form {
+                flex-direction: column;
+            }
+
+            .search-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .probability-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🛡️</div>
+            <h1>Phishing URL Detector</h1>
+            <p class="subtitle">AI-powered real-time security scanner for malicious URLs</p>
+        </header>
+
+        <div class="search-card">
+            <form class="search-form" id="searchForm">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="urlInput" 
+                    placeholder="Enter URL to check (e.g., https://example.com)" 
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+                <button type="submit" class="search-btn" id="searchBtn">
+                    <span>🔍</span>
+                    <span>Check URL</span>
+                </button>
+            </form>
+            <p class="search-hint">Enter a full URL or website address to scan for phishing indicators</p>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing URL for security threats...</p>
+        </div>
+
+        <div class="result-card" id="resultCard">
+            <div class="result-header">
+                <div class="result-icon" id="resultIcon">✓</div>
+                <div class="result-title">
+                    <div class="result-classification" id="resultClassification">Safe</div>
+                    <div class="result-url" id="resultUrl">https://example.com</div>
+                </div>
+            </div>
+
+            <div class="probability-grid">
+                <div class="probability-card legit">
+                    <div class="probability-value" id="legitProb">0%</div>
+                    <div class="probability-label">Legitimate Probability</div>
+                </div>
+                <div class="probability-card phish">
+                    <div class="probability-value" id="phishProb">0%</div>
+                    <div class="probability-label">Phishing Probability</div>
+                </div>
+            </div>
+
+            <div class="confidence-bar">
+                <div class="confidence-label">
+                    <span>Risk Level</span>
+                    <span id="riskLevel">Low</span>
+                </div>
+                <div class="confidence-track">
+                    <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="summary-text" id="summaryText">
+                This URL appears to be safe.
+            </div>
+
+            <div class="factors-section" id="riskFactors">
+                <div class="factors-title risk">
+                    <span>⚠️</span>
+                    <span>Risk Factors</span>
+                </div>
+                <div id="riskFactorsList"></div>
+            </div>
+
+            <div class="factors-section" id="safeFactors">
+                <div class="factors-title safe">
+                    <span>✓</span>
+                    <span>Safe Indicators</span>
+                </div>
+                <div id="safeFactorsList"></div>
+            </div>
+        </div>
+
+        <div class="recent-checks" id="recentChecks" style="display: none;">
+            <h3 class="recent-title">Recent Checks</h3>
+            <ul class="recent-list" id="recentList"></ul>
+        </div>
+
+        <footer>
+            <p>Phishing URL Detector - Powered by Machine Learning</p>
+            <p>Built for real-time security analysis</p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let recentChecks = [];
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL to check');
+                return;
+            }
+
+            await checkUrl(url);
+        });
+
+        async function checkUrl(url) {
+            // Hide previous results and errors
+            document.getElementById('resultCard').classList.remove('visible');
+            document.getElementById('errorMessage').classList.remove('visible');
+            document.getElementById('searchBtn').disabled = true;
+            
+            // Show loading
+            document.getElementById('loading').classList.add('visible');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                displayResult(data);
+                addToRecent(data);
+
+            } catch (error) {
+                showError('Failed to connect to the analysis server. Please try again.');
+                console.error(error);
+            } finally {
+                document.getElementById('loading').classList.remove('visible');
+                document.getElementById('searchBtn').disabled = false;
+            }
+        }
+
+        function displayResult(data) {
+            const resultCard = document.getElementById('resultCard');
+            const resultIcon = document.getElementById('resultIcon');
+            const resultClassification = document.getElementById('resultClassification');
+            const resultUrl = document.getElementById('resultUrl');
+            const legitProb = document.getElementById('legitProb');
+            const phishProb = document.getElementById('phishProb');
+            const riskLevel = document.getElementById('riskLevel');
+            const confidenceFill = document.getElementById('confidenceFill');
+            const summaryText = document.getElementById('summaryText');
+            const riskFactorsList = document.getElementById('riskFactorsList');
+            const safeFactorsList = document.getElementById('safeFactorsList');
+            const riskFactors = document.getElementById('riskFactors');
+            const safeFactors = document.getElementById('safeFactors');
+
+            // Set classification
+            const classification = data.classification.toLowerCase();
+            resultClassification.textContent = data.classification;
+            resultClassification.className = 'result-classification ' + (classification === 'legitimate' ? 'safe' : classification);
+            resultUrl.textContent = data.url;
+
+            // Set icon
+            resultIcon.className = 'result-icon ' + (classification === 'legitimate' ? 'safe' : classification);
+            if (classification === 'legitimate') {
+                resultIcon.textContent = '✓';
+            } else if (classification === 'suspicious') {
+                resultIcon.textContent = '?';
+            } else {
+                resultIcon.textContent = '⚠';
+            }
+
+            // Set probabilities
+            const legitProbVal = ((data.legitimate_probability || (1 - data.phishing_probability)) * 100).toFixed(1);
+            const phishProbVal = (data.phishing_probability * 100).toFixed(1);
+            legitProb.textContent = legitProbVal + '%';
+            phishProb.textContent = phishProbVal + '%';
+
+            // Set risk level and confidence bar
+            riskLevel.textContent = data.risk_level;
+            confidenceFill.style.width = phishProbVal + '%';
+            confidenceFill.className = 'confidence-fill ' + (classification === 'legitimate' ? 'safe' : classification);
+
+            // Set summary
+            summaryText.textContent = data.summary || 'Analysis complete.';
+
+            // Set risk factors
+            riskFactorsList.innerHTML = '';
+            if (data.risk_factors && data.risk_factors.length > 0) {
+                riskFactors.style.display = 'block';
+                data.risk_factors.forEach(factor => {
+                    const item = document.createElement('div');
+                    item.className = 'factor-item';
+                    item.innerHTML = `
+                        <div class="factor-icon ${factor.severity}">${factor.severity === 'high' ? '⚠' : '!'}</div>
+                        <div class="factor-content">
+                            <div class="factor-name">${factor.factor}</div>
+                            <div class="factor-desc">${factor.description}</div>
+                        </div>
+                    `;
+                    riskFactorsList.appendChild(item);
+                });
+            } else {
+                riskFactors.style.display = 'none';
+            }
+
+            // Set safe factors
+            safeFactorsList.innerHTML = '';
+            if (data.safe_factors && data.safe_factors.length > 0) {
+                safeFactors.style.display = 'block';
+                data.safe_factors.forEach(factor => {
+                    const item = document.createElement('div');
+                    item.className = 'factor-item';
+                    item.innerHTML = `
+                        <div class="factor-icon safe">✓</div>
+                        <div class="factor-content">
+                            <div class="factor-name">${factor.factor}</div>
+                            <div class="factor-desc">${factor.description}</div>
+                        </div>
+                    `;
+                    safeFactorsList.appendChild(item);
+                });
+            } else {
+                safeFactors.style.display = 'none';
+            }
+
+            // Show result card
+            resultCard.classList.add('visible');
+        }
+
+        function addToRecent(data) {
+            recentChecks.unshift({
+                url: data.url,
+                classification: data.classification
+            });
+
+            // Keep only last 5
+            recentChecks = recentChecks.slice(0, 5);
+
+            updateRecentList();
+        }
+
+        function updateRecentList() {
+            const recentChecksEl = document.getElementById('recentChecks');
+            const recentList = document.getElementById('recentList');
+
+            if (recentChecks.length === 0) {
+                recentChecksEl.style.display = 'none';
+                return;
+            }
+
+            recentChecksEl.style.display = 'block';
+            recentList.innerHTML = '';
+
+            recentChecks.forEach(check => {
+                const li = document.createElement('li');
+                li.className = 'recent-item';
+                
+                const classification = check.classification.toLowerCase();
+                const badgeClass = classification === 'legitimate' ? 'safe' : classification;
+                
+                li.innerHTML = `
+                    <span class="recent-url">${check.url}</span>
+                    <span class="recent-badge ${badgeClass}">${check.classification}</span>
+                `;
+                
+                li.style.cursor = 'pointer';
+                li.onclick = () => {
+                    document.getElementById('urlInput').value = check.url;
+                    checkUrl(check.url);
+                };
+                
+                recentList.appendChild(li);
+            });
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        // Handle URL input - auto-add https:// if missing
+        document.getElementById('urlInput').addEventListener('blur', (e) => {
+            let value = e.target.value.trim();
+            if (value && !value.startsWith('http://') && !value.startsWith('https://')) {
+                e.target.value = 'https://' + value;
+            }
+        });
+    </script>
+</body>
+</html>

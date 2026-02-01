@@ -1,0 +1,40 @@
+# Phishing Website Detection Project - Dependencies
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+
+# URL Parsing and Analysis
+tldextract>=5.1.0
+urllib3>=2.0.0
+validators>=0.22.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+joblib>=1.3.0
+xgboost>=2.0.0
+
+# DNS and Network Analysis
+dnspython>=2.4.0
+python-whois>=0.8.0
+socket
+
+# Web Framework for Real-time Detection
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Security Analysis
+cryptography>=41.0.0
+
+# Entropy calculation
+scipy>=1.11.0
+
+# Progress bars
+tqdm>=4.66.0
+
+# API rate limiting
+ratelimit>=2.2.0
+
+# For SSL certificate analysis
+pyOpenSSL>=23.3.0
